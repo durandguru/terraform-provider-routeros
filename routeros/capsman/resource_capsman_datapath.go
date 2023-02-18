@@ -2,65 +2,92 @@ package routeros
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+/*
+  {
+    ".id": "*1",
+    "arp": "disabled",
+    "bridge": "bridge",
+    "bridge-cost": "0",
+    "bridge-horizon": "none",
+    "client-to-client-forwarding": "true",
+    "interface-list": "all",
+    "l2mtu": "0",
+    "local-forwarding": "true",
+    "mtu": "32",
+    "name": "datapath1",
+    "vlan-id": "1",
+    "vlan-mode": "no-tag"
+  }
+*/
+
+// https://help.mikrotik.com/docs/display/ROS/CAPsMAN
 func ResourceCapsManDatapath() *schema.Resource {
 	resSchema := map[string]*schema.Schema{
 		MetaResourcePath: PropResourcePath("/caps-man/datapath"),
 		MetaId:           PropId(Name),
 
+		"arp": {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "ARP mode. See [docs](https://wiki.mikrotik.com/wiki/Manual:IP/ARP#ARP_Modes) for info.",
+			ValidateFunc: validation.StringInSlice([]string{"disabled", "enabled", "local-proxy-arp", "proxy-arp",
+				"reply-only"}, false),
+		},
 		"bridge": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "Bridge interface to add interface to, as a bridge port, when enabled.",
 		},
 		"bridge_cost": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Description: "Bridge port cost to use when adding as bridge port.",
 		},
-		KeyName:    PropNameRw,
-		KeyComment: PropCommentRw,
 		"bridge_horizon": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-		},
-		"interface_list": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-		},
-		KeyL2Mtu: PropL2MtuRo,
-		"local_forwarding": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Description: "Bridge horizon to use when adding as bridge port.",
 		},
 		"client_to_client_forwarding": {
-			Type:     schema.TypeString,
+			Type:     schema.TypeBool,
 			Optional: true,
-			Computed: true,
+			Description: "Controls if client-to-client forwarding between wireless clients connected to interface " +
+				"should be allowed, in local forwarding mode this function is performed by CAP, otherwise it is " +
+				"performed by CAPsMAN.",
 		},
-		"mtu": {
-			Type:     schema.TypeString,
+		KeyComment: PropCommentRw,
+		"interface_list": {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "Interface list name.",
+		},
+		"local_forwarding": {
+			Type:     schema.TypeBool,
 			Optional: true,
-			Computed: true,
+			Description: "Controls forwarding mode. If disabled, all L2 and L3 data will be forwarded to CAPsMAN, " +
+				"and further forwarding decisions will be made only then. See [docs](https://wiki.mikrotik.com/wiki/Manual:CAPsMAN#Local_Forwarding_Mode) for info.",
 		},
+		KeyL2Mtu: PropL2MtuRo,
+		KeyName:  PropNameRw,
 		"openflow_switch": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "OpenFlow switch to add interface to, as port when enabled.",
+		},
+		"vlan_id": {
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Description:  "VLAN ID to assign to interface if vlan-mode enables use of VLAN tagging.",
+			ValidateFunc: validation.IntBetween(1, 4095),
 		},
 		"vlan_mode": {
 			Type:     schema.TypeString,
 			Optional: true,
-			Computed: true,
-		},
-		"vlan_id": {
-			Type:     schema.TypeInt,
-			Optional: true,
-			Computed: true,
+			Description: "VLAN tagging mode specifies if VLAN tag should be assigned to interface (causes all received " +
+				"data to get tagged with VLAN tag and allows interface to only send out data tagged with given tag)",
 		},
 	}
 
